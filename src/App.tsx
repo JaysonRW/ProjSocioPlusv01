@@ -21,6 +21,7 @@ import { Payments } from './pages/member/Payments';
 // Admin Pages
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { MembersList } from './pages/admin/MembersList';
+import { AdminLogin } from './pages/admin/AdminLogin';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser, loading } = useAuth();
@@ -46,6 +47,7 @@ export default function App() {
           {/* Public Routes without Layout (Auth) */}
           <Route path="/join" element={<Join />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
 
           {/* Member Routes */}
           <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
