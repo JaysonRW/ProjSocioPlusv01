@@ -81,11 +81,16 @@ export const Login: React.FC = () => {
         </button>
       </form>
       
-      <div className="mt-8 text-center">
+      <div className="mt-8 text-center flex flex-col gap-4">
         <p className="text-muted text-sm">
           Ainda não é sócio?{' '}
           <Link to="/join" className="text-primary font-bold hover:underline">
             Cadastre-se
+          </Link>
+        </p>
+        <p className="text-muted text-xs">
+          <Link to="/admin/login" className="hover:text-primary transition-colors underline underline-offset-4">
+            Administrador acesse aqui
           </Link>
         </p>
       </div>
