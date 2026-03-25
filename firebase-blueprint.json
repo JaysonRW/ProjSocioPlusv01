@@ -1,0 +1,63 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A member of the torcida organizada",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "nome": { "type": "string" },
+        "cpf": { "type": "string" },
+        "data_nascimento": { "type": "string" },
+        "telefone": { "type": "string" },
+        "email": { "type": "string" },
+        "foto_url": { "type": "string" },
+        "status": { "type": "string", "enum": ["ativo", "inativo"] },
+        "role": { "type": "string", "enum": ["socio", "admin"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "nome", "cpf", "email", "status", "role"]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "A monthly payment record",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string" },
+        "valor": { "type": "number" },
+        "status": { "type": "string", "enum": ["pendente", "pago"] },
+        "data_vencimento": { "type": "string", "format": "date-time" },
+        "data_pagamento": { "type": "string", "format": "date-time" },
+        "pix_code": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["user_id", "valor", "status", "data_vencimento"]
+    },
+    "News": {
+      "title": "News",
+      "description": "A news article or announcement",
+      "type": "object",
+      "properties": {
+        "titulo": { "type": "string" },
+        "conteudo": { "type": "string" },
+        "data_publicacao": { "type": "string", "format": "date-time" },
+        "authorId": { "type": "string" }
+      },
+      "required": ["titulo", "conteudo", "data_publicacao", "authorId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores user profiles"
+    },
+    "/payments/{paymentId}": {
+      "schema": { "$ref": "#/entities/Payment" },
+      "description": "Stores payment records"
+    },
+    "/news/{newsId}": {
+      "schema": { "$ref": "#/entities/News" },
+      "description": "Stores news articles"
+    }
+  }
+}

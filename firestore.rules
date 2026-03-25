@@ -1,0 +1,143 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (matches auth.uid)
+    // Fields:
+    //   - uid: string (required, immutable)
+    //   - nome: string (required)
+    //   - cpf: string (required)
+    //   - data_nascimento: string (optional)
+    //   - telefone: string (optional)
+    //   - email: string (required)
+    //   - foto_url: string (optional)
+    //   - status: string (required, enum: 'ativo', 'inativo')
+    //   - role: string (required, enum: 'socio', 'admin')
+    //   - createdAt: string (optional)
+    //
+    // Collection: payments
+    // Document ID: paymentId
+    // Fields:
+    //   - user_id: string (required, immutable)
+    //   - valor: number (required)
+    //   - status: string (required, enum: 'pendente', 'pago')
+    //   - data_vencimento: string (required)
+    //   - data_pagamento: string (optional)
+    //   - pix_code: string (optional)
+    //   - createdAt: string (optional)
+    //
+    // Collection: news
+    // Document ID: newsId
+    // Fields:
+    //   - titulo: string (required)
+    //   - conteudo: string (required)
+    //   - data_publicacao: string (required)
+    //   - authorId: string (required, immutable)
+    //
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+       return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+       return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          request.auth.token.email == "propagoumkd@gmail.com");
+    }
+    
+    function uidUnchanged() {
+       return !('uid' in request.resource.data) ||
+         request.resource.data.uid == request.auth.uid;
+    }
+    
+    function uidNotModified() {
+       return !('uid' in request.resource.data) ||
+         request.resource.data.uid == resource.data.uid;
+    }
+    
+    function hasRequiredFields(fields) {
+       return request.resource.data.keys().hasAll(fields);
+    }
+    
+    function isValidUser(data) {
+      return data.nome is string && data.nome.size() > 0 && data.nome.size() < 100 &&
+             data.cpf is string && data.cpf.size() >= 11 && data.cpf.size() <= 14 &&
+             data.email is string && data.email.size() > 0 && data.email.size() < 100 &&
+             data.status in ['ativo', 'inativo'] &&
+             data.role in ['socio', 'admin'];
+    }
+
+    function isValidPayment(data) {
+      return data.user_id is string && data.user_id.size() > 0 &&
+             data.valor is number && data.valor > 0 &&
+             data.status in ['pendente', 'pago'] &&
+             data.data_vencimento is string;
+    }
+
+    function isValidNews(data) {
+      return data.titulo is string && data.titulo.size() > 0 && data.titulo.size() < 200 &&
+             data.conteudo is string && data.conteudo.size() > 0 && data.conteudo.size() < 5000 &&
+             data.data_publicacao is string &&
+             data.authorId is string;
+    }
+    
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && 
+                    isOwner(userId) && 
+                    uidUnchanged() &&
+                    hasRequiredFields(['uid', 'nome', 'cpf', 'email', 'status', 'role']) &&
+                    isValidUser(request.resource.data) &&
+                    (request.resource.data.role == 'socio' || isAdmin());
+      allow update: if isAuthenticated() && 
+                    isValidUser(request.resource.data) && 
+                    uidNotModified() &&
+                    (
+                      (isOwner(userId) && request.resource.data.role == resource.data.role && request.resource.data.status == resource.data.status) || 
+                      isAdmin()
+                    );
+      allow delete: if isAdmin();
+    }
+    
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.user_id || isAdmin());
+      allow create: if isAuthenticated() && 
+                    hasRequiredFields(['user_id', 'valor', 'status', 'data_vencimento']) &&
+                    isValidPayment(request.resource.data) &&
+                    (request.auth.uid == request.resource.data.user_id || isAdmin());
+      allow update: if isAuthenticated() && 
+                    isValidPayment(request.resource.data) &&
+                    (
+                      (request.auth.uid == resource.data.user_id && request.resource.data.user_id == resource.data.user_id) || 
+                      isAdmin()
+                    );
+      allow delete: if isAdmin();
+    }
+    
+    match /news/{newsId} {
+      allow read: if true; // Publicly readable
+      allow create: if isAdmin() && 
+                    hasRequiredFields(['titulo', 'conteudo', 'data_publicacao', 'authorId']) &&
+                    isValidNews(request.resource.data) &&
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAdmin() && isValidNews(request.resource.data);
+      allow delete: if isAdmin();
+    }
+  }
+}
