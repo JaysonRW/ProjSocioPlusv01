@@ -62,8 +62,14 @@ export const PublicFooter: React.FC = () => {
             &copy; {new Date().getFullYear()} SócioPlus. Todos os direitos reservados.
           </p>
           <div className="mt-4 md:mt-0 flex items-center gap-2">
-            <span className="text-xs text-muted uppercase tracking-widest">Powered by</span>
-            <Shield className="w-4 h-4 text-muted" />
+            <a 
+              href="https://propagounaweb.com.br" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-xs text-muted hover:text-primary uppercase tracking-widest transition-colors"
+            >
+              Powered By Propagounaweb
+            </a>
           </div>
         </div>
       </div>
